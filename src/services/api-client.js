@@ -1,7 +1,11 @@
 import axios from "axios";
 
+const apiBaseUrl =
+  import.meta.env.VITE_API_BASE_URL?.trim() ||
+  "http://127.0.0.1:8000/api/v1";
+
 const apiClient = axios.create({
-  baseURL: "https://phibook-1cwh.vercel.app/api/v1",
+  baseURL: apiBaseUrl,
 });
 
 const getAuthToken = () => {
