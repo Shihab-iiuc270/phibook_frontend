@@ -44,6 +44,7 @@ const Register = () => {
         name,
         email,
         password,
+        confirmPassword,
         phoneNumber,
         location,
         avatarFile,

@@ -87,27 +87,85 @@ const useAuth = () => {
     }
   };
 
-  const registerUser = async ({ name, email, password, phoneNumber, location, avatarFile }) => {
+  const registerUser = async ({
+    name,
+    email,
+    password,
+    confirmPassword,
+    phoneNumber,
+    location,
+    avatarFile,
+  }) => {
     const names = (name || "").trim().split(" ").filter(Boolean);
     const firstName = names[0] || "";
     const lastName = names.slice(1).join(" ");
 
-    const form = new FormData();
-    form.append("email", email);
-    form.append("password", password);
-    form.append("first_name", firstName);
-    form.append("last_name", lastName);
+    const payload = {
+      email,
+      password,
+      first_name: firstName,
+      last_name: lastName,
+    };
+
     if (phoneNumber !== undefined && phoneNumber !== null && phoneNumber !== "") {
-      form.append("phone_number", phoneNumber);
+      payload.phone_number = phoneNumber;
     }
     if (location !== undefined && location !== null && location !== "") {
-      form.append("location", location);
-    }
-    if (avatarFile) {
-      form.append("avatar", avatarFile);
+      payload.location = location;
     }
 
-    await apiClient.post("/auth/users/", form);
+    const submitRegistration = (data) => apiClient.post("/auth/users/", data);
+
+    if (avatarFile) {
+      const form = new FormData();
+      Object.entries(payload).forEach(([key, value]) => {
+        form.append(key, value);
+      });
+      form.append("avatar", avatarFile);
+
+      try {
+        await submitRegistration(form);
+        return;
+      } catch (err) {
+        const requiresPasswordRetype = Boolean(err?.response?.data?.re_password);
+        const requiresUsername = Boolean(err?.response?.data?.username);
+        if (!requiresPasswordRetype && !requiresUsername) {
+          throw err;
+        }
+
+        if (requiresPasswordRetype && confirmPassword) {
+          form.append("re_password", confirmPassword);
+        }
+        if (requiresUsername) {
+          form.append("username", email);
+        }
+        await submitRegistration(form);
+        return;
+      }
+    }
+
+    try {
+      await submitRegistration(payload);
+    } catch (err) {
+      const data = err?.response?.data || {};
+      const nextPayload = { ...payload };
+      let shouldRetry = false;
+
+      if (data?.re_password && confirmPassword) {
+        nextPayload.re_password = confirmPassword;
+        shouldRetry = true;
+      }
+      if (data?.username) {
+        nextPayload.username = email;
+        shouldRetry = true;
+      }
+
+      if (!shouldRetry) {
+        throw err;
+      }
+
+      await submitRegistration(nextPayload);
+    }
   };
 
   const updateProfile = async ({ name, location, phoneNumber, avatarFile }) => {
