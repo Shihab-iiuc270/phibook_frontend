@@ -35,7 +35,12 @@ const Feed = () => {
       setLoading(true);
       const payload = await getPosts(targetPage);
       const list = Array.isArray(payload) ? payload : payload?.items || [];
-      const hydrated = await hydrateOwnersForPosts(list, ownerCacheRef.current);
+      let hydrated = list;
+      try {
+        hydrated = await hydrateOwnersForPosts(list, ownerCacheRef.current);
+      } catch (ownerError) {
+        console.warn("Falling back to post owner data without profile hydration.", ownerError);
+      }
       setPosts(hydrated);
       setTotalPages(Math.max(1, Number(payload?.totalPages) || 1));
       setHasNext(Boolean(payload?.next));
