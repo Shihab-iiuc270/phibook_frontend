@@ -49,7 +49,7 @@ const Register = () => {
         location,
         avatarFile,
       });
-      setSuccessMessage("please log in.");
+      setSuccessMessage("Check your email for activation. After activating, please log in.");
       setRedirecting(true);
       redirectTimerRef.current = setTimeout(() => {
         navigate("/login");
