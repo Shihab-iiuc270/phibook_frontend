@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { MoreHorizontal, ThumbsUp, MessageSquare, Share2, Globe } from 'lucide-react';
 import { getDefaultAvatarUrl, toAbsoluteMediaUrl } from '../../services/media';
 
 const PostCard = ({
+  postId,
   user,
   time,
   content,
@@ -18,6 +19,8 @@ const PostCard = ({
 }) => {
   const [commentText, setCommentText] = useState("");
   const [showComments, setShowComments] = useState(false);
+  const [shareFeedback, setShareFeedback] = useState("");
+  const shareTimeoutRef = useRef(null);
   
   const getValidImageUrl = (imageObj) => {
     if (!imageObj) return null;
@@ -43,8 +46,62 @@ const PostCard = ({
     setCommentText("");
   };
 
+  useEffect(() => {
+    return () => {
+      if (shareTimeoutRef.current) clearTimeout(shareTimeoutRef.current);
+    };
+  }, []);
+
+  const buildShareUrl = () => {
+    if (typeof window === "undefined") return "";
+    const base = `${window.location.origin}${window.location.pathname}`;
+    if (!postId) return base;
+    return `${base}#post-${postId}`;
+  };
+
+  const handleShare = async () => {
+    const url = buildShareUrl();
+    const shareText = String(content || "").trim();
+
+    try {
+      if (navigator?.share) {
+        await navigator.share({
+          title: user?.name ? `${user.name} on Phibook` : "Phibook post",
+          text: shareText ? shareText.slice(0, 180) : undefined,
+          url,
+        });
+        setShareFeedback("Shared.");
+      } else if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        setShareFeedback("Link copied.");
+      } else {
+        // Old browsers fallback
+        window.prompt("Copy this link:", url);
+        setShareFeedback("Link ready.");
+      }
+    } catch {
+      // user canceled share or browser blocked it
+      if (navigator?.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(url);
+          setShareFeedback("Link copied.");
+        } catch {
+          setShareFeedback("Could not share.");
+        }
+      } else {
+        setShareFeedback("Could not share.");
+      }
+    } finally {
+      if (shareTimeoutRef.current) clearTimeout(shareTimeoutRef.current);
+      shareTimeoutRef.current = setTimeout(() => setShareFeedback(""), 2000);
+    }
+  };
+
   return (
-    <div className="bg-white/95 rounded-2xl shadow-[0_10px_30px_rgba(15,23,42,0.08)] border border-slate-200 mb-4 overflow-hidden w-full max-w-[680px] mx-auto">
+    <div
+      id={postId ? `post-${postId}` : undefined}
+      className="bg-white/95 rounded-2xl shadow-[0_10px_30px_rgba(15,23,42,0.08)] border border-slate-200 mb-4 overflow-hidden w-full max-w-[680px] mx-auto"
+    >
       
       {/* HEADER SECTION */}
       <div className="p-3 sm:p-4 flex justify-between items-center">
@@ -147,10 +204,20 @@ const PostCard = ({
         >
           <MessageSquare size={18} /> <span className="hidden sm:inline">Comment</span>
         </button>
-        <button className="flex-1 flex items-center justify-center space-x-2 py-2 text-slate-600 font-semibold hover:bg-slate-100 rounded-xl transition text-sm">
+        <button
+          type="button"
+          onClick={handleShare}
+          className="flex-1 flex items-center justify-center space-x-2 py-2 text-slate-600 font-semibold hover:bg-slate-100 rounded-xl transition text-sm"
+        >
           <Share2 size={18} /> <span className="hidden sm:inline">Share</span>
         </button>
       </div>
+
+      {shareFeedback ? (
+        <div className="px-3 sm:px-4 pb-3 -mt-1">
+          <p className="text-xs text-slate-500">{shareFeedback}</p>
+        </div>
+      ) : null}
 
       {showComments ? (
         <div className="px-3 sm:px-4 pb-4 pt-2 border-t border-slate-200 bg-slate-50/60">

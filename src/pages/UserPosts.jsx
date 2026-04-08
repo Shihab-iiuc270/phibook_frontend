@@ -1,53 +1,156 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import PostCard from "../components/feed/PostCard";
+import UserProfileHeader from "../components/profile/UserProfileHeader";
+import useAuthContext from "../hooks/useAuthContext";
+import { sendFriendRequest } from "../services/friendService";
 import { getPosts } from "../services/postService";
 import { getDefaultAvatarUrl } from "../services/media";
-import { hydrateOwnersForPosts } from "../services/userService";
+import { getUserById, hydrateOwnersForPosts } from "../services/userService";
 
 const getOwner = (post) => post?.poster || post?.author || post?.user || {};
 
 const UserPosts = () => {
   const { userId } = useParams();
+  const navigate = useNavigate();
+  const { user: me } = useAuthContext();
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [friendSending, setFriendSending] = useState(false);
+  const [friendSent, setFriendSent] = useState(false);
+  const [friendError, setFriendError] = useState("");
   const ownerCacheRef = useRef(new Map());
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      setProfileLoading(true);
       setPosts([]);
+      setProfile(null);
       try {
-        const all = [];
-        let page = 1;
-        let hasNext = true;
-        while (hasNext && page <= 50) {
-          const payload = await getPosts(page);
-          const items = Array.isArray(payload) ? payload : payload?.items || [];
-          all.push(...items);
-          hasNext = Boolean(payload?.next);
-          page += 1;
-        }
+        const rawId = String(userId || "").trim();
+        const numericId = Number(rawId);
+        const hasNumericId = rawId !== "" && Number.isFinite(numericId);
 
-        const id = Number(userId);
-        const filtered = all.filter((p) => {
-          const owner = getOwner(p);
-          return owner?.id === id || p?.user_id === id || p?.author_id === id || p?.poster_id === id;
-        });
-        const hydrated = await hydrateOwnersForPosts(filtered, ownerCacheRef.current);
-        setPosts(hydrated);
+        const profileTask = (async () => {
+          if (!rawId) return null;
+          try {
+            return await getUserById(rawId);
+          } catch {
+            return null;
+          }
+        })();
+
+        const postsTask = (async () => {
+          const all = [];
+          let page = 1;
+          let hasNext = true;
+          while (hasNext && page <= 50) {
+            const payload = await getPosts(page);
+            const items = Array.isArray(payload) ? payload : payload?.items || [];
+            all.push(...items);
+            hasNext = Boolean(payload?.next);
+            page += 1;
+          }
+
+          const filtered = all.filter((p) => {
+            const owner = getOwner(p);
+            const ownerId = owner?.id;
+            return (
+              (hasNumericId && ownerId === numericId) ||
+              String(ownerId ?? "") === rawId ||
+              (hasNumericId &&
+                (p?.user_id === numericId || p?.author_id === numericId || p?.poster_id === numericId)) ||
+              String(p?.user_id ?? "") === rawId ||
+              String(p?.author_id ?? "") === rawId ||
+              String(p?.poster_id ?? "") === rawId
+            );
+          });
+
+          return hydrateOwnersForPosts(filtered, ownerCacheRef.current);
+        })();
+
+        const [profileResult, postsResult] = await Promise.allSettled([profileTask, postsTask]);
+        if (profileResult.status === "fulfilled") setProfile(profileResult.value);
+        if (postsResult.status === "fulfilled") setPosts(postsResult.value || []);
       } finally {
         setLoading(false);
+        setProfileLoading(false);
       }
     };
     load();
   }, [userId]);
 
+  const derivedProfile = profile || (posts?.[0] ? getOwner(posts[0]) : null);
+  const targetUserId = derivedProfile?.id ?? userId ?? null;
+  const isMe = Boolean(me?.id && targetUserId && String(me.id) === String(targetUserId));
+
+  useEffect(() => {
+    setFriendSending(false);
+    setFriendSent(false);
+    setFriendError("");
+  }, [userId]);
+
+  useEffect(() => {
+    if (loading) return;
+    const hash = typeof window !== "undefined" ? window.location.hash : "";
+    if (!hash || !hash.startsWith("#post-")) return;
+    const targetId = hash.slice(1);
+    const el = document.getElementById(targetId);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [loading, posts]);
+
+  const handleAddFriend = async () => {
+    setFriendError("");
+    if (!targetUserId) return;
+
+    if (!me) {
+      navigate("/login");
+      return;
+    }
+
+    if (friendSending || friendSent) return;
+
+    setFriendSending(true);
+    try {
+      await sendFriendRequest(targetUserId);
+      setFriendSent(true);
+    } catch (err) {
+      setFriendError(
+        err?.friendlyMessage ||
+          err?.response?.data?.detail ||
+          err?.response?.data?.message ||
+          "Could not send friend request."
+      );
+    } finally {
+      setFriendSending(false);
+    }
+  };
+
   return (
     <div className="space-y-3 max-w-[680px] mx-auto px-1 sm:px-0">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-        <h2 className="text-xl font-bold">User Posts</h2>
-      </div>
+      <UserProfileHeader
+        user={derivedProfile}
+        loading={profileLoading}
+        postsCount={posts.length}
+        primaryAction={
+          !isMe && targetUserId
+            ? {
+                label: friendSent ? "Request Sent" : friendSending ? "Sending..." : "Add Friend",
+                onClick: handleAddFriend,
+                disabled: profileLoading || friendSending || friendSent,
+                variant: friendSent ? "secondary" : "primary",
+              }
+            : null
+        }
+      />
+      {friendError ? (
+        <div className="bg-red-50 text-red-600 p-3 rounded-xl border border-red-200 text-sm">
+          {friendError}
+        </div>
+      ) : null}
       {loading ? <p className="text-gray-500 px-2">Loading posts...</p> : null}
       {!loading && posts.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -57,6 +160,7 @@ const UserPosts = () => {
       {posts.map((post) => (
         <PostCard
           key={post.id}
+          postId={post.id}
           user={{
             name: post?.poster?.name || post?.author?.name || post?.user?.name || "User",
             avatar: post?.poster?.avatar || post?.author?.avatar || post?.user?.avatar || getDefaultAvatarUrl(),

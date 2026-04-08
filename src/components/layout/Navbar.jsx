@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { Search, Home, Users, Plus } from "lucide-react";
+import { Search, Home, Users, Plus, BadgeCheck } from "lucide-react";
 import useAuthContext from "../../hooks/useAuthContext";
 import { searchUsers } from "../../services/userService";
 import { getDefaultAvatarUrl } from "../../services/media";
@@ -148,6 +148,11 @@ const Navbar = () => {
             to={user ? "/profile/posts" : "/login"}
             icon={<Users />}
             active={location.pathname === "/profile/posts" || location.pathname.startsWith("/users/")}
+          />
+          <NavIcon
+            to={user ? "/blue-badge" : "/login"}
+            icon={<BadgeCheck />}
+            active={location.pathname === "/blue-badge"}
           />
         </div>
 

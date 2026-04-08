@@ -14,6 +14,7 @@ import Likes from '../pages/Likes';
 import PaymentSuccess from '../pages/PaymentSuccess';
 import PaymentFail from '../pages/PaymentFail';
 import PaymentCancel from '../pages/PaymentCancel';
+import BlueBadge from '../pages/BlueBadge';
 
 const AppRoutes = () => {
   const { user } = useAuthContext();
@@ -59,9 +60,20 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/blue-badge"
+          element={
+            <ProtectedRoute>
+              <BlueBadge />
+            </ProtectedRoute>
+          }
+        />
+        {/* <Route path="/payment/success" element={<PaymentSuccess />} /> */}
         <Route path="/payment/success" element={<PaymentSuccess />} />
-        <Route path="/payment/fail" element={<PaymentFail />} />
-        <Route path="/payment/cancel" element={<PaymentCancel />} />
+        {/* <Route path="/payment/fail" element={<PaymentFail />} /> */}
+        <Route path="/payment/fail/" element={<PaymentFail />} />
+        {/* <Route path="/payment/cancel" element={<PaymentCancel />} /> */}
+        <Route path="payment/cancel/" element={<PaymentCancel />} />
       </Route>
 
       <Route

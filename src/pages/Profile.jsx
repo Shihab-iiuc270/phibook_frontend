@@ -69,6 +69,16 @@ const Profile = () => {
     load();
   }, [showPostsOnly]);
 
+  useEffect(() => {
+    if (!showPostsOnly) return;
+    if (loading) return;
+    const hash = typeof window !== "undefined" ? window.location.hash : "";
+    if (!hash || !hash.startsWith("#post-")) return;
+    const targetId = hash.slice(1);
+    const el = document.getElementById(targetId);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [showPostsOnly, loading, myPosts]);
+
   const onSubmit = async (e) => {
     e.preventDefault();
     setFormError("");
@@ -109,6 +119,7 @@ const Profile = () => {
               {myPosts.map((post) => (
                 <PostCard
                   key={post.id}
+                  postId={post.id}
                   user={{
                     name:
                       post?.poster?.name ||

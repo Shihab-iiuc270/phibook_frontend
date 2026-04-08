@@ -29,6 +29,20 @@ export const DEFAULT_MONETIZATION_PLANS = {
       description: "Best value premium access for 12 months.",
     },
   ],
+  blue_badge: [
+    {
+      id: "badge_month",
+      name: "Blue Badge (Monthly)",
+      amount: 499,
+      description: "Verified badge + member support for 30 days.",
+    },
+    {
+      id: "badge_year",
+      name: "Blue Badge (Yearly)",
+      amount: 4999,
+      description: "Verified badge + member support for 12 months.",
+    },
+  ],
 };
 
 const toNumber = (value) => {
@@ -54,11 +68,18 @@ const normalizeArrayByType = (rows = []) => {
   const grouped = {
     post_promotion: [],
     premium_membership: [],
+    blue_badge: [],
   };
 
   rows.forEach((row, index) => {
     const rawType = String(row?.type || row?.feature_type || row?.category || "").toLowerCase();
-    const type = rawType.includes("premium") ? "premium_membership" : rawType.includes("promot") ? "post_promotion" : "post_promotion";
+    const type = rawType.includes("badge") || rawType.includes("verify")
+      ? "blue_badge"
+      : rawType.includes("premium")
+        ? "premium_membership"
+        : rawType.includes("promot")
+          ? "post_promotion"
+          : "post_promotion";
     const normalized = normalizePlanItem(row, type, index);
     if (normalized.amount > 0) {
       grouped[type].push(normalized);
@@ -99,9 +120,12 @@ const normalizePlansResponse = (payload) => {
     premium_membership: Array.isArray(payload?.premium_membership)
       ? payload.premium_membership.map((item, index) => normalizePlanItem(item, "premium_membership", index))
       : [],
+    blue_badge: Array.isArray(payload?.blue_badge)
+      ? payload.blue_badge.map((item, index) => normalizePlanItem(item, "blue_badge", index))
+      : [],
   };
 
-  if (structured.post_promotion.length || structured.premium_membership.length) {
+  if (structured.post_promotion.length || structured.premium_membership.length || structured.blue_badge.length) {
     return structured;
   }
 
@@ -118,6 +142,8 @@ const withFallback = (incoming) => {
     premium_membership:
       incoming.premium_membership?.filter((plan) => plan.amount > 0) ||
       DEFAULT_MONETIZATION_PLANS.premium_membership,
+    blue_badge:
+      incoming.blue_badge?.filter((plan) => plan.amount > 0) || DEFAULT_MONETIZATION_PLANS.blue_badge,
   };
 };
 

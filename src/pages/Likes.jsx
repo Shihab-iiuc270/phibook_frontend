@@ -37,6 +37,15 @@ const Likes = () => {
     load();
   }, []);
 
+  useEffect(() => {
+    if (loading) return;
+    const hash = typeof window !== "undefined" ? window.location.hash : "";
+    if (!hash || !hash.startsWith("#post-")) return;
+    const targetId = hash.slice(1);
+    const el = document.getElementById(targetId);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [loading, posts]);
+
   const requireAuth = () => navigate("/login");
 
   const handleToggleLike = async (postId) => {
@@ -115,6 +124,7 @@ const Likes = () => {
       {posts.map((post) => (
         <PostCard
           key={post.id}
+          postId={post.id}
           user={{
             name: post?.poster?.name || post?.author?.name || post?.user?.name || "Unknown User",
             avatar:
