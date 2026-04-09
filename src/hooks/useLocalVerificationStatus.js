@@ -64,8 +64,14 @@ const useLocalVerificationStatus = (user, { tickMs = 60_000 } = {}) => {
       setState(snapshot(user));
     };
 
+    const onLocalVerification = () => setState(snapshot(user));
+
     window?.addEventListener?.("storage", onStorage);
-    return () => window?.removeEventListener?.("storage", onStorage);
+    window?.addEventListener?.("phi:local-verification", onLocalVerification);
+    return () => {
+      window?.removeEventListener?.("storage", onStorage);
+      window?.removeEventListener?.("phi:local-verification", onLocalVerification);
+    };
   }, [user?.id, user?.email]);
 
   useEffect(() => {

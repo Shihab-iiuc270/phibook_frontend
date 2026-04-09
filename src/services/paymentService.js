@@ -1,4 +1,5 @@
 import apiClient from "./api-client";
+import { markUserLocallyVerified } from "./localVerification";
 
 export const DEFAULT_MONETIZATION_PLANS = {
   post_promotion: [
@@ -43,6 +44,78 @@ export const DEFAULT_MONETIZATION_PLANS = {
       description: "Verified badge + member support for 12 months.",
     },
   ],
+};
+
+const PENDING_FEATURE_KEY = "phi_pending_feature_v1";
+const PENDING_FEATURE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 hours
+
+const safeJsonParse = (value) => {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
+
+const nowIso = () => new Date().toISOString();
+
+const durationDaysForPlanId = (planId) => {
+  const id = String(planId || "").toLowerCase();
+  if (id.includes("year")) return 365;
+  if (id.includes("month")) return 30;
+  if (id.includes("week")) return 7;
+  if (id.includes("day")) return 1;
+  return null;
+};
+
+export const setPendingPaymentFeature = (feature) => {
+  if (typeof window === "undefined") return false;
+  try {
+    const payload = {
+      ...feature,
+      createdAt: nowIso(),
+    };
+    localStorage.setItem(PENDING_FEATURE_KEY, JSON.stringify(payload));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const consumePendingPaymentFeature = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(PENDING_FEATURE_KEY);
+    localStorage.removeItem(PENDING_FEATURE_KEY);
+    const parsed = safeJsonParse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+
+    const createdAt = parsed?.createdAt ? new Date(parsed.createdAt).getTime() : NaN;
+    if (!Number.isFinite(createdAt)) return null;
+    if (Date.now() - createdAt > PENDING_FEATURE_MAX_AGE_MS) return null;
+
+    const planId = parsed?.planId || parsed?.feature_plan || parsed?.plan || null;
+    const durationDays = parsed?.durationDays ?? durationDaysForPlanId(planId);
+
+    return {
+      type: parsed?.type || parsed?.feature_type || null,
+      planId,
+      durationDays: Number.isFinite(Number(durationDays)) ? Number(durationDays) : null,
+    };
+  } catch {
+    return null;
+  }
+};
+
+export const activateLocalFeatureFromPending = (user, pending) => {
+  const type = String(pending?.type || "").toLowerCase();
+  if (!type) return false;
+
+  const isBlueBadge = type.includes("badge") || type.includes("verify");
+  if (!isBlueBadge) return false;
+
+  const days = pending?.durationDays || 30;
+  return markUserLocallyVerified(user, { durationDays: days });
 };
 
 const toNumber = (value) => {

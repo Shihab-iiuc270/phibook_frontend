@@ -27,6 +27,11 @@ const safeWriteStore = (store) => {
   } catch {
     // ignore
   }
+  try {
+    window.dispatchEvent(new CustomEvent("phi:local-verification"));
+  } catch {
+    // ignore
+  }
 };
 
 export const getVerificationKeyForUser = (user) => {

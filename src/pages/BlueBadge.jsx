@@ -5,6 +5,7 @@ import {
   DEFAULT_MONETIZATION_PLANS,
   getMonetizationPlans,
   initiatePayment,
+  setPendingPaymentFeature,
 } from "../services/paymentService";
 
 const getFirstPlanId = (plans = [], fallback = "") => plans?.[0]?.id || fallback;
@@ -69,6 +70,11 @@ const BlueBadge = () => {
         feature_type: "blue_badge",
         feature_plan: selectedPlan.id,
         feature_name: selectedPlan.name,
+      });
+      setPendingPaymentFeature({
+        type: "blue_badge",
+        planId: selectedPlan.id,
+        durationDays: selectedPlan.id?.includes("year") ? 365 : 30,
       });
       window.location.assign(paymentUrl);
     } catch (err) {
