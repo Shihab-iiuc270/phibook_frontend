@@ -15,6 +15,7 @@ const BlueBadge = () => {
   const { user, fetchMyProfile } = useAuthContext();
   const { verified, expiresAt, remainingLabelShort, remainingLabelLong } =
     useLocalVerificationStatus(user);
+  const [profileSyncing, setProfileSyncing] = useState(true);
   const [plansLoading, setPlansLoading] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [error, setError] = useState("");
@@ -24,8 +25,21 @@ const BlueBadge = () => {
   );
 
   useEffect(() => {
-    fetchMyProfile?.().catch(() => {});
-  }, []);
+    let active = true;
+    const sync = async () => {
+      try {
+        await fetchMyProfile?.();
+      } catch {
+        // ignore
+      } finally {
+        if (active) setProfileSyncing(false);
+      }
+    };
+    sync();
+    return () => {
+      active = false;
+    };
+  }, [fetchMyProfile]);
 
   useEffect(() => {
     let active = true;
@@ -115,6 +129,11 @@ const BlueBadge = () => {
       </div>
 
       <div className="bg-white/95 rounded-2xl border border-slate-200 shadow-[0_10px_30px_rgba(15,23,42,0.08)] p-4 sm:p-6 space-y-4">
+        {profileSyncing ? (
+          <div className="bg-slate-50 text-slate-600 p-2 rounded-xl border border-slate-200 text-sm">
+            Syncing your badge status...
+          </div>
+        ) : null}
         {error ? (
           <div className="bg-red-50 text-red-600 p-2 rounded-xl border border-red-200 text-sm">
             {error}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import apiClient from "../services/api-client";
 import { ensureUserLocallyVerified } from "../services/localVerification";
 import { getDefaultAvatarUrl, toAbsoluteMediaUrl } from "../services/media";
@@ -76,6 +76,14 @@ const useAuth = () => {
     }
     return profile;
   };
+
+  useEffect(() => {
+    // Cross-device sync: if user gets verified on another device, refresh profile on app boot.
+    const hasToken = Boolean(tokenFromPayload(authTokens) || localStorage.getItem("phi_token"));
+    if (!hasToken) return;
+    fetchMyProfile().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loginUser = async (email, password) => {
     const response = await apiClient.post("/auth/jwt/create/", {
