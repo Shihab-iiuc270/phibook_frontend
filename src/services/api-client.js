@@ -33,7 +33,10 @@ const getAuthToken = () => {
 
 apiClient.interceptors.request.use((config) => {
   const token = getAuthToken();
-  if (token) config.headers.Authorization = `JWT ${token}`;
+  if (token) {
+    const scheme = (import.meta.env.VITE_AUTH_SCHEME || "JWT").trim();
+    config.headers.Authorization = `${scheme} ${token}`;
+  }
   return config;
 });
 

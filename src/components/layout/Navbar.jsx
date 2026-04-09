@@ -165,6 +165,14 @@ const Navbar = () => {
               <Plus size={20} />
             </div>
           ) : null}
+          <Link
+            to={user ? "/blue-badge" : "/login"}
+            className="bg-slate-100 p-2 rounded-xl hover:bg-slate-200 cursor-pointer transition-colors text-slate-700 lg:hidden"
+            title={user ? "Blue Badge" : "Login to buy Blue Badge"}
+            aria-label="Blue Badge"
+          >
+            <BadgeCheck size={20} />
+          </Link>
           {user ? (
             <>
               <Link
