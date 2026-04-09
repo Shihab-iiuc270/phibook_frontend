@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BadgeCheck, Sparkles } from "lucide-react";
 import useAuthContext from "../hooks/useAuthContext";
+import useLocalVerificationStatus from "../hooks/useLocalVerificationStatus";
 import {
   DEFAULT_MONETIZATION_PLANS,
   getMonetizationPlans,
@@ -12,6 +13,8 @@ const getFirstPlanId = (plans = [], fallback = "") => plans?.[0]?.id || fallback
 
 const BlueBadge = () => {
   const { user, fetchMyProfile } = useAuthContext();
+  const { verified, expiresAt, remainingLabelShort, remainingLabelLong } =
+    useLocalVerificationStatus(user);
   const [plansLoading, setPlansLoading] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [error, setError] = useState("");
@@ -65,6 +68,10 @@ const BlueBadge = () => {
     setError("");
     setPaymentLoading(true);
     try {
+      if (verified) {
+        setError("Your Blue Badge is already active.");
+        return;
+      }
       const { paymentUrl } = await initiatePayment({
         amount: selectedPlan.amount,
         feature_type: "blue_badge",
@@ -128,45 +135,82 @@ const BlueBadge = () => {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-semibold text-slate-800">Choose a plan</p>
-            <p className="text-xs text-slate-500">{plansLoading ? "Loading plans..." : "BDT"}</p>
-          </div>
+        {verified ? (
+          <div className="rounded-2xl border border-sky-200 bg-sky-50/60 p-4 space-y-2">
+            <div className="flex items-start gap-3">
+              <div className="bg-white border border-sky-200 rounded-2xl p-2 text-sky-700">
+                <BadgeCheck size={18} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-slate-900">Blue Badge active</p>
+                <p className="text-xs text-slate-700 mt-0.5">
+                  {expiresAt
+                    ? `Expires on ${expiresAt.toLocaleString?.() || String(expiresAt)}`
+                    : "Expiry time not available."}
+                </p>
+              </div>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {(plans || []).map((plan) => {
-              const active = plan.id === selectedPlanId;
-              return (
-                <button
-                  key={plan.id}
-                  type="button"
-                  onClick={() => setSelectedPlanId(plan.id)}
-                  className={`rounded-xl border p-3 text-left transition ${
-                    active
-                      ? "border-emerald-400 bg-emerald-50"
-                      : "border-slate-200 bg-white hover:border-slate-300"
-                  }`}
-                >
-                  <p className="text-sm font-semibold text-slate-800">{plan.name}</p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    {plan.description || "Verified badge plan"}
-                  </p>
-                  <p className="text-sm font-bold text-emerald-700 mt-2">BDT {plan.amount}</p>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+            {expiresAt ? (
+              <div className="flex items-center justify-between gap-2 rounded-xl bg-white border border-sky-200 px-3 py-2">
+                <p className="text-xs font-semibold text-slate-700">Time left</p>
+                <p className="text-xs font-bold text-sky-700">
+                  {remainingLabelLong || remainingLabelShort || "—"}
+                </p>
+              </div>
+            ) : null}
 
-        <button
-          type="button"
-          disabled={plansLoading || paymentLoading || !selectedPlan}
-          onClick={startCheckout}
-          className="w-full sm:w-auto bg-gradient-to-r from-sky-500 to-blue-700 text-white px-4 py-2 rounded-xl font-semibold hover:opacity-95 transition disabled:opacity-60"
-        >
-          {paymentLoading ? "Redirecting to Payment..." : "Get Blue Badge"}
-        </button>
+            <button
+              type="button"
+              onClick={() => fetchMyProfile?.().catch(() => {})}
+              className="w-full sm:w-auto bg-white border border-slate-200 hover:border-slate-300 text-slate-900 px-4 py-2 rounded-xl font-semibold transition"
+            >
+              Refresh status
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-slate-800">Choose a plan</p>
+                <p className="text-xs text-slate-500">{plansLoading ? "Loading plans..." : "BDT"}</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {(plans || []).map((plan) => {
+                  const active = plan.id === selectedPlanId;
+                  return (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      onClick={() => setSelectedPlanId(plan.id)}
+                      className={`rounded-xl border p-3 text-left transition ${
+                        active
+                          ? "border-emerald-400 bg-emerald-50"
+                          : "border-slate-200 bg-white hover:border-slate-300"
+                      }`}
+                    >
+                      <p className="text-sm font-semibold text-slate-800">{plan.name}</p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {plan.description || "Verified badge plan"}
+                      </p>
+                      <p className="text-sm font-bold text-emerald-700 mt-2">BDT {plan.amount}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              disabled={plansLoading || paymentLoading || !selectedPlan}
+              onClick={startCheckout}
+              className="w-full sm:w-auto bg-gradient-to-r from-sky-500 to-blue-700 text-white px-4 py-2 rounded-xl font-semibold hover:opacity-95 transition disabled:opacity-60"
+            >
+              {paymentLoading ? "Redirecting to Payment..." : "Get Blue Badge"}
+            </button>
+          </>
+        )}
       </div>
     </section>
   );
