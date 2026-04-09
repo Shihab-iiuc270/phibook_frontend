@@ -122,3 +122,57 @@ export const getUserVerificationExpiry = (user) => {
   const date = new Date(entry.expiresAt);
   return Number.isFinite(date.getTime()) ? date : null;
 };
+
+const coerceTruthyBoolean = (value) => {
+  if (value === true) return true;
+  if (value === false) return false;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") return ["true", "1", "yes"].includes(value.trim().toLowerCase());
+  return false;
+};
+
+const asValidDateOrNull = (value) => {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isFinite(date.getTime()) ? date : null;
+};
+
+export const getUserServerVerificationInfo = (user) => {
+  const raw = user?.raw || null;
+
+  const verifiedValue =
+    user?.is_verified ??
+    user?.isVerified ??
+    user?.verified ??
+    raw?.is_verified ??
+    raw?.isVerified ??
+    raw?.verified ??
+    null;
+
+  const verified = coerceTruthyBoolean(verifiedValue);
+
+  const expiresAtValue =
+    user?.verified_expires_at ??
+    user?.verifiedExpiresAt ??
+    user?.verified_until ??
+    user?.verifiedUntil ??
+    raw?.verified_expires_at ??
+    raw?.verifiedExpiresAt ??
+    raw?.verified_until ??
+    raw?.verifiedUntil ??
+    null;
+
+  const expiresAt = asValidDateOrNull(expiresAtValue);
+
+  if (expiresAt && Date.now() >= expiresAt.getTime()) {
+    return { verified: false, expiresAt };
+  }
+
+  return { verified, expiresAt };
+};
+
+export const ensureUserLocallyVerified = (user, { expiresAt, durationDays } = {}) => {
+  const entry = getUserLocalVerification(user);
+  if (entry?.verified && isUserLocallyVerified(user)) return true;
+  return markUserLocallyVerified(user, { expiresAt, durationDays });
+};

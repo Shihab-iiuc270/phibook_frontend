@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  getUserServerVerificationInfo,
   getUserLocalVerification,
   getUserVerificationExpiry,
   isUserLocallyVerified,
@@ -37,8 +38,12 @@ const toLongLabel = (parts) => {
 };
 
 const snapshot = (user) => {
-  const verified = isUserLocallyVerified(user);
-  const expiresAt = getUserVerificationExpiry(user);
+  const server = getUserServerVerificationInfo(user);
+  const localVerified = isUserLocallyVerified(user);
+  const localExpiresAt = getUserVerificationExpiry(user);
+
+  const verified = Boolean(server?.verified) || localVerified;
+  const expiresAt = server?.expiresAt || localExpiresAt;
   const entry = getUserLocalVerification(user);
   return {
     verified,
@@ -85,4 +90,3 @@ const useLocalVerificationStatus = (user, { tickMs = 60_000 } = {}) => {
 };
 
 export default useLocalVerificationStatus;
-

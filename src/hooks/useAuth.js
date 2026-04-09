@@ -1,5 +1,6 @@
 import { useState } from "react";
 import apiClient from "../services/api-client";
+import { ensureUserLocallyVerified } from "../services/localVerification";
 import { getDefaultAvatarUrl, toAbsoluteMediaUrl } from "../services/media";
 
 const tokenFromPayload = (tokens) =>
@@ -66,6 +67,13 @@ const useAuth = () => {
 
     setUser(profile);
     localStorage.setItem("phi_user", JSON.stringify(profile));
+
+    const serverVerified =
+      me?.is_verified ?? me?.isVerified ?? me?.verified ?? me?.blue_badge ?? me?.is_blue_badge ?? false;
+
+    if (serverVerified) {
+      ensureUserLocallyVerified(profile);
+    }
     return profile;
   };
 

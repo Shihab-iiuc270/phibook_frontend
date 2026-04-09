@@ -1,13 +1,34 @@
 import { CheckCircle2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
+import useAuthContext from "../hooks/useAuthContext";
 
 const PaymentSuccess = () => {
   const { search } = useLocation();
+  const { fetchMyProfile } = useAuthContext();
+  const [syncing, setSyncing] = useState(true);
   const params = new URLSearchParams(search);
   const transactionId = params.get("tran_id") || params.get("transaction_id") || "N/A";
   const amount = params.get("amount") || params.get("total_amount") || null;
   const featureType = String(params.get("feature_type") || params.get("type") || "").toLowerCase();
   const isBlueBadge = featureType.includes("badge") || featureType.includes("verify");
+
+  useEffect(() => {
+    let active = true;
+    const sync = async () => {
+      try {
+        await fetchMyProfile?.();
+      } catch {
+        // ignore
+      } finally {
+        if (active) setSyncing(false);
+      }
+    };
+    sync();
+    return () => {
+      active = false;
+    };
+  }, [fetchMyProfile]);
 
   return (
     <section className="bg-white/95 border border-emerald-200 rounded-2xl shadow-[0_10px_30px_rgba(15,23,42,0.08)] p-4 sm:p-6">
@@ -17,7 +38,9 @@ const PaymentSuccess = () => {
             <h1 className="text-lg sm:text-xl font-bold text-slate-900">Payment Successful</h1>
             <p className="text-sm text-slate-600 mt-1">
               {isBlueBadge
-                ? "Your Blue Badge purchase is complete. Verification will be activated shortly."
+                ? syncing
+                  ? "Your Blue Badge purchase is complete. Syncing verification..."
+                  : "Your Blue Badge purchase is complete. Verification is active on your account."
                 : "Your checkout is complete. Your purchase will be activated shortly."}
             </p>
           </div>
