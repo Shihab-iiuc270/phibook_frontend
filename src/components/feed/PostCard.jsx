@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MoreHorizontal, ThumbsUp, MessageSquare, Share2, Globe } from 'lucide-react';
 import { getDefaultAvatarUrl, toAbsoluteMediaUrl } from '../../services/media';
+import VerifiedName from '../shared/VerifiedName';
 
 const PostCard = ({
   postId,
@@ -115,7 +116,9 @@ const PostCard = ({
             }}
           />
           <div className="min-w-0">
-            <p className="font-semibold text-[15px] hover:underline cursor-pointer truncate">{user?.name}</p>
+            <p className="font-semibold text-[15px] hover:underline cursor-pointer truncate">
+              <VerifiedName user={user} name={user?.name} />
+            </p>
             <p className="text-xs text-slate-500 font-normal mt-0.5 flex items-center gap-1">
               {time} · <Globe size={12} />
             </p>
@@ -226,7 +229,12 @@ const PostCard = ({
               {comments.map((comment, idx) => (
                 <div key={comment?.id || idx} className="bg-white rounded-xl px-3 py-2 border border-slate-200">
                   <p className="text-sm font-semibold text-slate-700">
-                    {comment?.user?.name || comment?.author?.name || "User"}
+                    <VerifiedName
+                      user={comment?.user || comment?.author || null}
+                      name={comment?.user?.name || comment?.author?.name || "User"}
+                      showCountdown={false}
+                      badgeSize={14}
+                    />
                   </p>
                   <p className="text-sm text-slate-700">{comment?.content || comment?.text || ""}</p>
                 </div>

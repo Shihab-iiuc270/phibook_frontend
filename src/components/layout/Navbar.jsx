@@ -4,6 +4,7 @@ import { Search, Home, Users, Plus, BadgeCheck } from "lucide-react";
 import useAuthContext from "../../hooks/useAuthContext";
 import { searchUsers } from "../../services/userService";
 import { getDefaultAvatarUrl } from "../../services/media";
+import VerifiedName from "../shared/VerifiedName";
 
 const SearchDropdown = ({ open, loading, users, onPick }) => {
   if (!open) return null;
@@ -30,7 +31,9 @@ const SearchDropdown = ({ open, loading, users, onPick }) => {
               />
 
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-800 truncate">{item.name}</p>
+                <p className="text-sm font-medium text-gray-800 truncate">
+                  <VerifiedName user={item} name={item.name} showCountdown={false} badgeSize={14} />
+                </p>
                 <p className="text-xs text-gray-500 truncate">{item.email}</p>
               </div>
             </button>
@@ -166,9 +169,9 @@ const Navbar = () => {
             <>
               <Link
                 to="/profile/posts"
-                className="text-sm font-semibold text-slate-700 hover:text-[#1877f2] max-w-[90px] sm:max-w-[160px] truncate"
+                className="text-sm font-semibold text-slate-700 hover:text-[#1877f2] max-w-[90px] sm:max-w-[160px] min-w-0"
               >
-                {navUserLabel}
+                <VerifiedName user={user} name={navUserLabel} />
               </Link>
               <button
                 onClick={onLogout}

@@ -143,7 +143,14 @@ const Feed = () => {
       const normalizedComment = {
         id: comment?.id ?? Date.now(),
         content: comment?.content || comment?.text || content,
-        user: comment?.user || comment?.author || { name: user?.name || user?.email || "You" },
+        user:
+          comment?.user ||
+          comment?.author || {
+            id: user?.id ?? null,
+            email: user?.email ?? null,
+            name: user?.name || user?.email || "You",
+            avatar: user?.avatar ?? null,
+          },
         created_at: comment?.created_at || new Date().toISOString(),
       };
 
@@ -189,24 +196,23 @@ const Feed = () => {
       {posts && posts.length > 0 ? (
         posts.map((post) => (
           (() => {
-            const postOwnerId = post?.poster?.id || post?.author?.id || post?.user?.id || null;
+            const owner = post?.poster || post?.author || post?.user || null;
+            const postOwnerId = owner?.id || null;
             const isMyPost = Boolean(user?.id && postOwnerId && Number(postOwnerId) === Number(user.id));
             return (
           <PostCard
             key={post.id}
             postId={post.id}
             user={{
+              id: (isMyPost ? user?.id : null) ?? owner?.id ?? null,
+              email: (isMyPost ? user?.email : null) ?? owner?.email ?? null,
               name:
-                post?.poster?.name ||
-                post?.author?.name ||
-                post?.user?.name ||
+                owner?.name ||
                 (isMyPost ? user?.name : null) ||
                 "Unknown User",
               avatar:
                 (isMyPost ? user?.avatar : null) ||
-                post?.poster?.avatar ||
-                post?.author?.avatar ||
-                post?.user?.avatar ||
+                owner?.avatar ||
                 getDefaultAvatarUrl(),
             }}
             time={new Date(post.created_at).toLocaleDateString(undefined, {

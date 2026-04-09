@@ -5,6 +5,7 @@ import { getPosts } from "../services/postService";
 import PostCard from "../components/feed/PostCard";
 import { getDefaultAvatarUrl } from "../services/media";
 import { hydrateOwnersForPosts } from "../services/userService";
+import VerifiedName from "../components/shared/VerifiedName";
 
 const getPostOwner = (post) => post?.poster || post?.author || post?.user || {};
 
@@ -121,6 +122,9 @@ const Profile = () => {
                   key={post.id}
                   postId={post.id}
                   user={{
+                    id: post?.poster?.id ?? post?.author?.id ?? post?.user?.id ?? user?.id ?? null,
+                    email:
+                      post?.poster?.email ?? post?.author?.email ?? post?.user?.email ?? user?.email ?? null,
                     name:
                       post?.poster?.name ||
                       post?.author?.name ||
@@ -167,7 +171,9 @@ const Profile = () => {
               }}
             />
             <div className="min-w-0">
-              <p className="font-semibold break-words">{user?.name || "Not available"}</p>
+              <p className="font-semibold break-words">
+                <VerifiedName user={user} name={user?.name || "Not available"} />
+              </p>
               <p className="text-sm text-gray-600 break-all">{user?.email || "Not available"}</p>
             </div>
           </div>

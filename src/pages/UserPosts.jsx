@@ -162,6 +162,8 @@ const UserPosts = () => {
           key={post.id}
           postId={post.id}
           user={{
+            id: post?.poster?.id ?? post?.author?.id ?? post?.user?.id ?? null,
+            email: post?.poster?.email ?? post?.author?.email ?? post?.user?.email ?? null,
             name: post?.poster?.name || post?.author?.name || post?.user?.name || "User",
             avatar: post?.poster?.avatar || post?.author?.avatar || post?.user?.avatar || getDefaultAvatarUrl(),
           }}

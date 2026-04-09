@@ -92,7 +92,14 @@ const Likes = () => {
       const normalizedComment = {
         id: comment?.id ?? Date.now(),
         content: comment?.content || comment?.text || content,
-        user: comment?.user || comment?.author || { name: user?.name || user?.email || "You" },
+        user:
+          comment?.user ||
+          comment?.author || {
+            id: user?.id ?? null,
+            email: user?.email ?? null,
+            name: user?.name || user?.email || "You",
+            avatar: user?.avatar ?? null,
+          },
         created_at: comment?.created_at || new Date().toISOString(),
       };
       setPosts((prev) =>
@@ -126,6 +133,8 @@ const Likes = () => {
           key={post.id}
           postId={post.id}
           user={{
+            id: post?.poster?.id ?? post?.author?.id ?? post?.user?.id ?? null,
+            email: post?.poster?.email ?? post?.author?.email ?? post?.user?.email ?? null,
             name: post?.poster?.name || post?.author?.name || post?.user?.name || "Unknown User",
             avatar:
               post?.poster?.avatar || post?.author?.avatar || post?.user?.avatar || getDefaultAvatarUrl(),

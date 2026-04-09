@@ -53,7 +53,7 @@ const GuestAuthPromptModal = ({ open, onClose }) => {
           >
             Create New Account
           </button>
-
+ 
           <button
             type="button"
             onClick={onClose}

@@ -1,6 +1,12 @@
 import React from 'react';
 import { getDefaultAvatarUrl } from '../../services/media';
 
+const labelToAlt = (label) => {
+  if (typeof label === "string") return label;
+  if (typeof label === "number") return String(label);
+  return "avatar";
+};
+
 const SidebarItem = ({ icon, img, label, isBold, isOnline }) => (
   <div className="flex items-center space-x-3 p-2 hover:bg-gray-200 rounded-lg cursor-pointer mx-2 transition-colors duration-200">
     {icon && <div className="w-8 flex justify-center">{icon}</div>}
@@ -9,7 +15,7 @@ const SidebarItem = ({ icon, img, label, isBold, isOnline }) => (
         <img
           src={img}
           className="w-9 h-9 rounded-full object-cover"
-          alt={label}
+          alt={labelToAlt(label)}
           onError={(e) => {
             e.currentTarget.src = getDefaultAvatarUrl();
           }}

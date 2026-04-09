@@ -1,4 +1,5 @@
 import { getDefaultAvatarUrl } from "../../services/media";
+import VerifiedName from "../shared/VerifiedName";
 
 const UserProfileHeader = ({ user, loading = false, postsCount = 0, primaryAction = null }) => {
   const name = user?.name || (loading ? "Loading..." : "User");
@@ -21,7 +22,9 @@ const UserProfileHeader = ({ user, loading = false, postsCount = 0, primaryActio
               }}
             />
             <div className="pb-1 min-w-0">
-              <h2 className="text-xl sm:text-2xl font-bold break-words">{name}</h2>
+              <h2 className="text-xl sm:text-2xl font-bold break-words">
+                <VerifiedName user={user} name={name} />
+              </h2>
               {email ? <p className="text-sm text-gray-600 break-all">{email}</p> : null}
               {location ? <p className="text-sm text-gray-600 break-words">{location}</p> : null}
             </div>

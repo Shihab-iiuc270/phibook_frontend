@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import SidebarItem from "../shared/SidebarItem";
 import useAuthContext from "../../hooks/useAuthContext";
 import { getDefaultAvatarUrl } from "../../services/media";
+import VerifiedName from "../shared/VerifiedName";
 
 const LeftSidebar = () => {
     const { user } = useAuthContext();
@@ -13,7 +14,7 @@ const LeftSidebar = () => {
                       <Link to="/profile/posts">
                         <SidebarItem
                           img={user?.avatar || getDefaultAvatarUrl()}
-                          label={user?.name || user?.email || "Guest User"}
+                          label={<VerifiedName user={user} name={user?.name || user?.email || "Guest User"} />}
                           isBold
                         />
                       </Link>
